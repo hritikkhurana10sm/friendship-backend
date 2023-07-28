@@ -1,7 +1,6 @@
 package com.outingtracker.app.friendshipservicemain.controller;
 
 import com.outingtracker.app.friendshipservicemain.model.DummyUser;
-import com.outingtracker.app.friendshipservicemain.model.Friendship;
 import com.outingtracker.app.friendshipservicemain.services.DummyUserServices;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;

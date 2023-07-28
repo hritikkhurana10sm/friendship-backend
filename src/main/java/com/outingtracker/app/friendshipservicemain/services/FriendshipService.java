@@ -1,7 +1,7 @@
 package com.outingtracker.app.friendshipservicemain.services;
 
 import com.outingtracker.app.friendshipservicemain.model.DummyUser;
-import com.outingtracker.app.friendshipservicemain.model.Friendship;
+import com.outingtracker.app.friendshipservicemain.model.FriendshipModel;
 import com.outingtracker.app.friendshipservicemain.model.User;
 import com.outingtracker.app.friendshipservicemain.repository.DummyUserRepository;
 import com.outingtracker.app.friendshipservicemain.repository.FriendshipRepository;
@@ -11,7 +11,6 @@ import org.springframework.stereotype.Service;
 import com.outingtracker.app.friendshipservicemain.dto.FriendshipDTO;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 @Service
@@ -28,7 +27,7 @@ public class FriendshipService {
         this.dummyUserRepository = dummyUserRepository;
     }
 
-    private FriendshipDTO convertToDTO(Friendship friendship) {
+    private FriendshipDTO convertToDTO(FriendshipModel friendship) {
         User inviterUser = userRepository.findById(friendship.getInviterUserId()).orElse(null);
         User inviteeUser = friendship.getInviteeUserId() != null ? userRepository.findById(friendship.getInviteeUserId()).orElse(null) : null;
         DummyUser dummyUser = friendship.getDummyUserId() != null ? dummyUserRepository.findById(friendship.getDummyUserId()).orElse(null) : null;
@@ -41,7 +40,7 @@ public class FriendshipService {
     }
 
     // Service to add test data to the database
-    public Friendship addTestData(Friendship friendship) {
+    public FriendshipModel addTestData(FriendshipModel friendship) {
         return friendshipRepository.save(friendship);
     }
 
@@ -51,14 +50,14 @@ public class FriendshipService {
             throw new IllegalArgumentException("User ID must not be null.");
         }
 
-        List<Friendship> friendships= friendshipRepository.findByInviterUserIdAndStatusOrStatusIsNull(userId, "accepted");
-        List<Friendship> friendships1 = friendshipRepository.findByInviteeUserIdAndStatus(userId, "accepted");
+        List<FriendshipModel> friendships= friendshipRepository.findByInviterUserIdAndStatusOrStatusIsNull(userId, "accepted");
+        List<FriendshipModel> friendships1 = friendshipRepository.findByInviteeUserIdAndStatus(userId, "accepted");
         friendships.addAll(friendships1);
 
 
         List<FriendshipDTO> friendshipDTOS = new ArrayList<>();
 
-         for(Friendship friendship : friendships){
+         for(FriendshipModel friendship : friendships){
 
 
              FriendshipDTO friendshipDTO = convertToDTO(friendship);
@@ -69,11 +68,11 @@ public class FriendshipService {
     }
 
     public List<FriendshipDTO> getAllFriendsRequests(String userId) {
-        List<Friendship> friendships= friendshipRepository.findByInviterUserIdAndStatus(userId, "invited");
+        List<FriendshipModel> friendships= friendshipRepository.findByInviterUserIdAndStatus(userId, "invited");
 
         List<FriendshipDTO> friendshipDTOS = new ArrayList<>();
 
-        for(Friendship friendship : friendships){
+        for(FriendshipModel friendship : friendships){
 
             FriendshipDTO friendshipDTO = convertToDTO(friendship);
             friendshipDTOS.add(friendshipDTO);
@@ -83,11 +82,11 @@ public class FriendshipService {
     }
 
     public List<FriendshipDTO> getAllFriendsInvitations(String userId) {
-        List<Friendship> friendships= friendshipRepository.findByInviteeUserIdAndStatus(userId, "invited");
+        List<FriendshipModel> friendships= friendshipRepository.findByInviteeUserIdAndStatus(userId, "invited");
 
         List<FriendshipDTO> friendshipDTOS = new ArrayList<>();
 
-        for(Friendship friendship : friendships){
+        for(FriendshipModel friendship : friendships){
 
             FriendshipDTO friendshipDTO = convertToDTO(friendship);
             friendshipDTOS.add(friendshipDTO);
@@ -100,7 +99,7 @@ public class FriendshipService {
         return userRepository.findByUsername(input);
     }
 
-    public Friendship sendFriendRequest(String inviterUserId, String inviteeUserId) {
+    public FriendshipModel sendFriendRequest(String inviterUserId, String inviteeUserId) {
         User inviterUser = userRepository.findById(inviterUserId).orElse(null);
         User inviteeUser = userRepository.findById(inviteeUserId).orElse(null);
 
@@ -109,14 +108,14 @@ public class FriendshipService {
         }
 
         // Check whether the invitee was already invited or friend
-        Friendship existingFriendship = friendshipRepository.findByInviterUserIdAndInviteeUserId(inviterUserId, inviteeUserId);
+        FriendshipModel existingFriendship = friendshipRepository.findByInviterUserIdAndInviteeUserId(inviterUserId, inviteeUserId);
 
         if(existingFriendship != null && (existingFriendship.getStatus().equals("accepted") || existingFriendship.getStatus().equals("invited"))){
             System.out.println("Friendship Already Exists!");
             return existingFriendship;
         }else {
 
-            Friendship friendship = new Friendship();
+            FriendshipModel friendship = new FriendshipModel();
             friendship.setInviterUserId(inviterUserId);
             friendship.setInviteeUserId(inviteeUserId);
             friendship.setStatus("invited");
@@ -127,7 +126,7 @@ public class FriendshipService {
     }
 
     // Service method to create dummyUser and add it as friend
-    public Friendship createDummyUserAndaddFriend(String inviterUserId, String dummyUserName){
+    public FriendshipModel createDummyUserAndaddFriend(String inviterUserId, String dummyUserName){
 
         User inviterUser= userRepository.findById(inviterUserId).orElse(null);
 
@@ -142,7 +141,7 @@ public class FriendshipService {
         DummyUser savedDummyUser = dummyUserRepository.save(dummyUser);
 
         // Create friendship between the inviterUser and dummyUser
-        Friendship friendship = new Friendship();
+        FriendshipModel friendship = new FriendshipModel();
         friendship.setInviterUserId(inviterUserId);
         friendship.setDummyUserId(savedDummyUser.getId());
 
@@ -153,19 +152,81 @@ public class FriendshipService {
 
     }
 
-    public Friendship acceptFriendInvitation(String userId, String inviteId){
-//       System.out.println(userId);
-//       System.out.println(inviteId);
-        Friendship invitation = friendshipRepository.findById(inviteId).orElse(null);
-//         System.out.println("hello");
-//         System.out.println(invitation.getInviteeUserId().equals(userId));
-        if(invitation == null || !invitation.getInviteeUserId().equals(userId)){
+    public FriendshipModel acceptFriendInvitation(String userId, String friendshipId){
+
+        FriendshipModel friendship  = friendshipRepository.findById(friendshipId).orElse(null);
+
+        if(friendship  == null || !friendship .getInviteeUserId().equals(userId)){
             throw new IllegalArgumentException("Invalid invitation Id or user Id");
         }
 
         // now updating status to be "accepted"
-        invitation.setStatus("accepted");
+        friendship.setStatus("accepted");
 
-        return friendshipRepository.save(invitation);
+        return friendshipRepository.save(friendship );
+    }
+
+    public void cancelInvitation(String friendshipId, String userId) {
+        FriendshipModel friendship = friendshipRepository.findById(friendshipId).orElse(null);
+        if (friendship != null && "invited".equals(friendship.getStatus())) {
+            friendshipRepository.delete(friendship);
+        } else {
+            throw new RuntimeException("Friendship not found with ID: " + friendshipId + " or it is not in invited status.");
+        }
+    }
+
+    public FriendshipModel revokeFriendship(String friendshipId, String userId) {
+        FriendshipModel friendship = friendshipRepository.findById(friendshipId).orElse(null);
+        if (friendship != null && "accepted".equals(friendship.getStatus())) {
+            friendship.setStatus("revoked");
+            return friendshipRepository.save(friendship);
+        } else {
+            throw new RuntimeException("Friendship not found with ID: " + friendshipId + " or it is not accepted.");
+        }
+    }
+
+
+    public FriendshipModel sendInvite(String nameOrEmail, String currentUser){
+
+        User user = null;
+
+        // checking if nameOrEmail is Email
+        if(isValidEmail(nameOrEmail)){
+            user = userRepository.findByEmail(nameOrEmail);
+        }
+
+        if(user != null){
+
+            // ...Check if the user is already a friend
+            FriendshipModel existingFriendship = friendshipRepository.findByInviterUserIdAndInviteeUserId(currentUser, user.getId());
+            if (existingFriendship != null) {
+                // User is already a friend, return null to indicate no friend request is sent
+                return null;
+            }
+
+            // User with given email is registered, send invite
+            FriendshipModel friendshipModel = new FriendshipModel();
+            friendshipModel.setInviterUserId(currentUser);
+            friendshipModel.setInviteeUserId(user.getId());
+            friendshipModel.setStatus("invited");
+            return friendshipRepository.save(friendshipModel);
+        }else{
+
+            // User with given email is not registered
+            DummyUser dummyUser = new DummyUser();
+            dummyUser.setName(nameOrEmail);
+            dummyUserRepository.save(dummyUser);
+
+            // creating friendship between them
+            FriendshipModel friendshipModel = new FriendshipModel();
+            friendshipModel.setInviterUserId(currentUser);
+            friendshipModel.setDummyUserId(dummyUser.getId());
+            return friendshipRepository.save(friendshipModel);
+        }
+
+    }
+
+    private boolean isValidEmail(String email){
+        return email.contains("@");
     }
 }

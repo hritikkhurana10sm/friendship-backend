@@ -5,7 +5,7 @@ import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 @Document(collection = "friendships")
-public class Friendship {
+public class FriendshipModel {
 
     @Id
     private String id;
@@ -16,11 +16,11 @@ public class Friendship {
     private String dummyUserId = null;
     private String status = null;
 
-    public Friendship(){
+    public FriendshipModel(){
 
     }
 
-    public Friendship(String id, @NonNull String inviterUserId, String inviteeUserId, String dummyUserId, String status) {
+    public FriendshipModel(String id, @NonNull String inviterUserId, String inviteeUserId, String dummyUserId, String status) {
         this.id = id;
         this.inviterUserId = inviterUserId;
         this.inviteeUserId = inviteeUserId;

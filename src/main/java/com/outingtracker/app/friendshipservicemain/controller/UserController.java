@@ -1,8 +1,6 @@
 package com.outingtracker.app.friendshipservicemain.controller;
 
-import com.outingtracker.app.friendshipservicemain.model.Friendship;
 import com.outingtracker.app.friendshipservicemain.model.User;
-import com.outingtracker.app.friendshipservicemain.repository.UserRepository;
 import com.outingtracker.app.friendshipservicemain.services.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
