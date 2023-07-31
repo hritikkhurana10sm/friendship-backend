@@ -7,6 +7,7 @@ import com.outingtracker.app.friendshipservicemain.repository.DummyUserRepositor
 import com.outingtracker.app.friendshipservicemain.repository.FriendshipRepository;
 import com.outingtracker.app.friendshipservicemain.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Bean;
 import org.springframework.stereotype.Service;
 import com.outingtracker.app.friendshipservicemain.dto.FriendshipDTO;
 
@@ -20,11 +21,14 @@ public class FriendshipService {
 
     private final DummyUserRepository dummyUserRepository;
 
+    private final GetUserServices getUserServices;
+
     @Autowired
-    public FriendshipService(FriendshipRepository friendshipRepository, UserRepository userRepository, DummyUserRepository dummyUserRepository) {
+    public FriendshipService(FriendshipRepository friendshipRepository, UserRepository userRepository, DummyUserRepository dummyUserRepository, GetUserServices getUserServices) {
         this.friendshipRepository = friendshipRepository;
         this.userRepository = userRepository;
         this.dummyUserRepository = dummyUserRepository;
+        this.getUserServices = getUserServices;
     }
 
     private FriendshipDTO convertToDTO(FriendshipModel friendship) {
@@ -44,7 +48,9 @@ public class FriendshipService {
         return friendshipRepository.save(friendship);
     }
 
-    public List<FriendshipDTO> getAllFriendsByUserId(String userId) {
+    public List<FriendshipDTO> getAllFriendsByUserId() {
+
+        String userId = getUserServices.getUserId();
 
         if (userId == null) {
             throw new IllegalArgumentException("User ID must not be null.");
@@ -67,8 +73,9 @@ public class FriendshipService {
          return friendshipDTOS;
     }
 
-    public List<FriendshipDTO> getAllFriendsRequests(String userId) {
-        List<FriendshipModel> friendships= friendshipRepository.findByInviterUserIdAndStatus(userId, "invited");
+    public List<FriendshipDTO> getAllFriendsRequests() {
+
+        List<FriendshipModel> friendships= friendshipRepository.findByInviterUserIdAndStatus(getUserServices.getUserId(), "invited");
 
         List<FriendshipDTO> friendshipDTOS = new ArrayList<>();
 
@@ -81,8 +88,9 @@ public class FriendshipService {
         return friendshipDTOS;
     }
 
-    public List<FriendshipDTO> getAllFriendsInvitations(String userId) {
-        List<FriendshipModel> friendships= friendshipRepository.findByInviteeUserIdAndStatus(userId, "invited");
+    public List<FriendshipDTO> getAllFriendsInvitations() {
+
+        List<FriendshipModel> friendships= friendshipRepository.findByInviteeUserIdAndStatus(getUserServices.getUserId(), "invited");
 
         List<FriendshipDTO> friendshipDTOS = new ArrayList<>();
 
@@ -99,134 +107,71 @@ public class FriendshipService {
         return userRepository.findByUsername(input);
     }
 
-    public FriendshipModel sendFriendRequest(String inviterUserId, String inviteeUserId) {
-        User inviterUser = userRepository.findById(inviterUserId).orElse(null);
-        User inviteeUser = userRepository.findById(inviteeUserId).orElse(null);
 
-        if (inviterUser == null || inviteeUser == null) {
-            throw new IllegalArgumentException("Invalid user IDs provided.");
+
+    public FriendshipModel acceptFriendInvitation(String friendshipId){
+        FriendshipModel friendship  = friendshipRepository.findByIdAndInviteeUserIdAndStatus(friendshipId, getUserServices.getUserId(), "invited");
+        if(friendship == null){
+            throw new RuntimeException("Friendship not found with ID: " + friendshipId + " or it is not in invited status.");
         }
-
-        // Check whether the invitee was already invited or friend
-        FriendshipModel existingFriendship = friendshipRepository.findByInviterUserIdAndInviteeUserId(inviterUserId, inviteeUserId);
-
-        if(existingFriendship != null && (existingFriendship.getStatus().equals("accepted") || existingFriendship.getStatus().equals("invited"))){
-            System.out.println("Friendship Already Exists!");
-            return existingFriendship;
-        }else {
-
-            FriendshipModel friendship = new FriendshipModel();
-            friendship.setInviterUserId(inviterUserId);
-            friendship.setInviteeUserId(inviteeUserId);
-            friendship.setStatus("invited");
-
-            // save friendship in the database
-            return friendshipRepository.save(friendship);
-        }
-    }
-
-    // Service method to create dummyUser and add it as friend
-    public FriendshipModel createDummyUserAndaddFriend(String inviterUserId, String dummyUserName){
-
-        User inviterUser= userRepository.findById(inviterUserId).orElse(null);
-
-        if(inviterUser == null){
-            throw new IllegalArgumentException("Invalid User ID provided");
-        }
-
-        DummyUser dummyUser = new DummyUser();
-        dummyUser.setName(dummyUserName);
-
-        // Save the dummy User in the database
-        DummyUser savedDummyUser = dummyUserRepository.save(dummyUser);
-
-        // Create friendship between the inviterUser and dummyUser
-        FriendshipModel friendship = new FriendshipModel();
-        friendship.setInviterUserId(inviterUserId);
-        friendship.setDummyUserId(savedDummyUser.getId());
-
-
-        // saving the friendship in the database
-
-        return friendshipRepository.save(friendship);
-
-    }
-
-    public FriendshipModel acceptFriendInvitation(String userId, String friendshipId){
-
-        FriendshipModel friendship  = friendshipRepository.findById(friendshipId).orElse(null);
-
-        if(friendship  == null || !friendship .getInviteeUserId().equals(userId)){
-            throw new IllegalArgumentException("Invalid invitation Id or user Id");
-        }
-
-        // now updating status to be "accepted"
         friendship.setStatus("accepted");
-
         return friendshipRepository.save(friendship );
     }
 
-    public void cancelInvitation(String friendshipId, String userId) {
-        FriendshipModel friendship = friendshipRepository.findById(friendshipId).orElse(null);
-        if (friendship != null && "invited".equals(friendship.getStatus())) {
+    public void cancelInvitation(String friendshipId) {
+        FriendshipModel friendship = friendshipRepository.findByIdAndInviterUserIdAndStatus(friendshipId, getUserServices.getUserId(), "invited");
+        if (friendship != null) {
             friendshipRepository.delete(friendship);
         } else {
             throw new RuntimeException("Friendship not found with ID: " + friendshipId + " or it is not in invited status.");
         }
     }
 
-    public FriendshipModel revokeFriendship(String friendshipId, String userId) {
-        FriendshipModel friendship = friendshipRepository.findById(friendshipId).orElse(null);
-        if (friendship != null && "accepted".equals(friendship.getStatus())) {
-            friendship.setStatus("revoked");
-            return friendshipRepository.save(friendship);
+    public void revokeFriendship(String friendshipId) {
+        FriendshipModel friendship = friendshipRepository.findByIdAndStatus(friendshipId, "accepted");
+
+        if (friendship != null && (getUserServices.getUserId().equals(friendship.getInviteeUserId())
+                || getUserServices.getUserId().equals(friendship.getInviterUserId()))) {
+            friendshipRepository.delete(friendship);
         } else {
             throw new RuntimeException("Friendship not found with ID: " + friendshipId + " or it is not accepted.");
         }
     }
 
 
-    public FriendshipModel sendInvite(String nameOrEmail, String currentUser){
+    public FriendshipModel sendInvite(String name, String email){
 
         User user = null;
 
         // checking if nameOrEmail is Email
-        if(isValidEmail(nameOrEmail)){
-            user = userRepository.findByEmail(nameOrEmail);
+        if(email != null){
+            user = userRepository.findByEmail(email);
         }
 
         if(user != null){
 
-            // ...Check if the user is already a friend
-            FriendshipModel existingFriendship = friendshipRepository.findByInviterUserIdAndInviteeUserId(currentUser, user.getId());
+            FriendshipModel existingFriendship = friendshipRepository.findByInviteeUserIdAndInviterUserIdOrInviteeUserIdAndInviterUserId(
+                    getUserServices.getUserId(), user.getId(), user.getId(), getUserServices.getUserId()
+            );
+
             if (existingFriendship != null) {
-                // User is already a friend, return null to indicate no friend request is sent
                 return null;
             }
 
             // User with given email is registered, send invite
-            FriendshipModel friendshipModel = new FriendshipModel();
-            friendshipModel.setInviterUserId(currentUser);
-            friendshipModel.setInviteeUserId(user.getId());
-            friendshipModel.setStatus("invited");
+            FriendshipModel friendshipModel = new FriendshipModel(getUserServices.getUserId(),user.getId(),"invited");
             return friendshipRepository.save(friendshipModel);
         }else{
 
-            // User with given email is not registered
-            DummyUser dummyUser = new DummyUser();
-            dummyUser.setName(nameOrEmail);
+            String var = name == null?email:name;
+            DummyUser dummyUser = new DummyUser(var);
             dummyUserRepository.save(dummyUser);
 
-            // creating friendship between them
-            FriendshipModel friendshipModel = new FriendshipModel();
-            friendshipModel.setInviterUserId(currentUser);
-            friendshipModel.setDummyUserId(dummyUser.getId());
+            FriendshipModel friendshipModel = new FriendshipModel(getUserServices.getUserId(),dummyUser.getId());
             return friendshipRepository.save(friendshipModel);
         }
 
     }
 
-    private boolean isValidEmail(String email){
-        return email.contains("@");
-    }
+
 }

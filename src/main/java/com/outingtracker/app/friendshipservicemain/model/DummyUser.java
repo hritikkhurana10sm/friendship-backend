@@ -10,8 +10,10 @@ public class DummyUser {
 
     private String name;
 
-    public DummyUser(){
+    public DummyUser(){}
 
+    public DummyUser(String name) {
+        this.name = name;
     }
 
     public DummyUser(String id, String name) {

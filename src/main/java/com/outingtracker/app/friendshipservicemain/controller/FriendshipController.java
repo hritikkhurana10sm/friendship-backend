@@ -4,8 +4,12 @@ import com.outingtracker.app.friendshipservicemain.dto.FriendshipDTO;
 import com.outingtracker.app.friendshipservicemain.model.FriendshipModel;
 import com.outingtracker.app.friendshipservicemain.model.User;
 import com.outingtracker.app.friendshipservicemain.services.FriendshipService;
+import com.outingtracker.app.friendshipservicemain.services.GetUserServices;
+import org.apache.catalina.connector.Response;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -18,39 +22,37 @@ public class FriendshipController {
 
      @Autowired
      private FriendshipService friendshipService;
+     @Autowired
+     private GetUserServices getUserServices;
 
-     // Adding test data to friendship
+
      @PostMapping("/test")
      public ResponseEntity<?> addTestData(@RequestBody FriendshipModel friend){
          FriendshipModel save = this.friendshipService.addTestData(friend);
          return ResponseEntity.ok(save);
      }
 
-     // Get list of friends of the user
      @GetMapping("/")
-     public ResponseEntity<List<FriendshipDTO>> getAllFriendsByUserId(){
-          String userId = "64b665fc7c3f6721059ea018";
-          List<FriendshipDTO> friends = friendshipService.getAllFriendsByUserId(userId);
+     public ResponseEntity<List<FriendshipDTO>> getAllFriendsByUserId(@RequestParam("userId") String userId){
+          getUserServices.setUserId(userId);
+          List<FriendshipDTO> friends = friendshipService.getAllFriendsByUserId();
           return ResponseEntity.ok(friends);
      }
 
-     // get list of requests user made
      @GetMapping("/sent-requests")
-     public ResponseEntity<List<FriendshipDTO>> getAllFriendsRequests(){
-          String userId = "64b665fc7c3f6721059ea018";
-          List<FriendshipDTO> friends = friendshipService.getAllFriendsRequests(userId);
+     public ResponseEntity<List<FriendshipDTO>> getAllFriendsRequests(@RequestParam("userId") String userId){
+          getUserServices.setUserId(userId);
+          List<FriendshipDTO> friends = friendshipService.getAllFriendsRequests();
           return ResponseEntity.ok(friends);
      }
 
-     // Get list of invitations to user
      @GetMapping("/received-requests")
-     public ResponseEntity<List<FriendshipDTO>> getAllFriendsInvitations(){
-          String userId = "64b665fc7c3f6721059ea018";
-          List<FriendshipDTO> friends = friendshipService.getAllFriendsInvitations(userId);
+     public ResponseEntity<List<FriendshipDTO>> getAllFriendsInvitations(@RequestParam("userId") String userId){
+          getUserServices.setUserId(userId);
+          List<FriendshipDTO> friends = friendshipService.getAllFriendsInvitations();
           return ResponseEntity.ok(friends);
      }
 
-     // Get users by usernameOrEmail
      @GetMapping("/users/search")
      public ResponseEntity<User> getUserByUsername(@RequestParam("input") String input){
           User user = friendshipService.getUserByUsername(input);
@@ -58,45 +60,47 @@ public class FriendshipController {
      }
 
      @PostMapping("/{friendship_id}/accept")
-     public ResponseEntity<FriendshipModel> acceptFriendInvitation(@PathVariable("friendship_id") String friendship_id){
-          String userId = "64b665fc7c3f6721059ea018";
-          FriendshipModel friendship = friendshipService.acceptFriendInvitation(userId, friendship_id);
+     public ResponseEntity<FriendshipModel> acceptFriendInvitation(@PathVariable("friendship_id") String friendship_id , @RequestParam("userId") String userId){
+          getUserServices.setUserId(userId);
+          FriendshipModel friendship = friendshipService.acceptFriendInvitation( friendship_id);
           return ResponseEntity.ok(friendship);
      }
 
      @PostMapping("/{friendship_id}/cancel")
-     public ResponseEntity<Void> cancelFriendInvitation(@PathVariable("friendship_id") String friendship_id){
-          String userId = "64b665fc7c3f6721059ea018";
-          friendshipService.cancelInvitation(friendship_id, userId);
+     public ResponseEntity<Void> cancelFriendInvitation(@PathVariable("friendship_id") String friendship_id , @RequestParam("userId") String userId){
+          getUserServices.setUserId(userId);
+          friendshipService.cancelInvitation(friendship_id);
           return null;
      }
 
      @PostMapping("/{friendship_id}/revoke")
-     public ResponseEntity<FriendshipModel> revokeInvitation(@PathVariable("friendship_id") String friendship_id){
-          String userId = "64b665fc7c3f6721059ea018";
-          FriendshipModel friendship = friendshipService.revokeFriendship(friendship_id, userId);
-          return ResponseEntity.ok(friendship);
+     public ResponseEntity<String> revokeInvitation(@PathVariable("friendship_id") String friendship_id, @RequestParam("userId") String userId ){
+          getUserServices.setUserId(userId);
+          friendshipService.revokeFriendship(friendship_id);
+          return ResponseEntity.status(HttpStatus.OK).body("Friendship Revoked by User Successfully!");
      }
 
      @PostMapping("/invite")
-     public ResponseEntity<FriendshipModel> sendInvite(@RequestBody Map<String, String> inviteRequest){
-          String userId = "64b665fc7c3f6721059ea018";
-          FriendshipModel result = friendshipService.sendInvite(inviteRequest.get("nameOrEmail"), userId);
-          return ResponseEntity.ok(result);
+     public ResponseEntity<String> sendInvite(@RequestBody Map<String, String> inviteRequest, @RequestParam("userId") String userId){
+          getUserServices.setUserId(userId);
+          String name = inviteRequest.get("name");
+          String email = inviteRequest.get("email");
+
+          if(StringUtils.hasText(name) || StringUtils.hasText(email)){
+
+               FriendshipModel result = friendshipService.sendInvite(name, email);
+
+               if(result != null) {
+                    return ResponseEntity.status(HttpStatus.OK).body("Friend Request sent successfully");
+               }else{
+                    return ResponseEntity.status(HttpStatus.CONFLICT).body("Already friends / Already Send-Requests or Received");
+               }
+          } else {
+               // Both name and email are empty
+               return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Provide atleast one of email or name");
+          }
+
      }
 
 
-     // Create Friendship
-//     @PostMapping("/user/{inviterUserId}/invitee/{inviteeUserId}/add")
-//     public ResponseEntity<FriendshipModel> sendInvite(@PathVariable("inviterUserId") String inviterUserId , @PathVariable("inviteeUserId") String inviteeUserId){
-//          FriendshipModel friendship = this.friendshipService.sendFriendRequest(inviterUserId , inviteeUserId);
-//          return ResponseEntity.ok(friendship);
-//     }
-
-//     @PostMapping("/user/{userId}/create-friend")
-//     public ResponseEntity<FriendshipModel> createDummyUserAndaddFriend(@PathVariable("userId") String userId, @RequestParam("dummyUserName")String dummyUserName){
-//
-//          FriendshipModel friendship = friendshipService.createDummyUserAndaddFriend(userId , dummyUserName);
-//          return ResponseEntity.ok(friendship);
-//     }
 }

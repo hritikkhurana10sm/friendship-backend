@@ -20,6 +20,14 @@ public class FriendshipModel {
 
     }
 
+    public FriendshipModel(@NonNull String inviterUserId, String inviteeUserId, String status) {
+        this.inviterUserId = inviterUserId;
+        this.inviteeUserId = inviteeUserId;
+        this.status = status;
+    }
+
+
+
     public FriendshipModel(String id, @NonNull String inviterUserId, String inviteeUserId, String dummyUserId, String status) {
         this.id = id;
         this.inviterUserId = inviterUserId;
@@ -30,6 +38,11 @@ public class FriendshipModel {
 
     public String getId() {
         return id;
+    }
+
+    public FriendshipModel(@NonNull String inviterUserId, String dummyUserId) {
+        this.inviterUserId = inviterUserId;
+        this.dummyUserId = dummyUserId;
     }
 
     public void setId(String id) {
