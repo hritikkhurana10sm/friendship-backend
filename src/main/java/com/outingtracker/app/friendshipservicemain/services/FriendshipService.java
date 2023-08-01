@@ -18,9 +18,7 @@ import java.util.List;
 public class FriendshipService {
     private final FriendshipRepository friendshipRepository;
     private final UserRepository userRepository;
-
     private final DummyUserRepository dummyUserRepository;
-
     private final GetUserServices getUserServices;
 
     @Autowired
@@ -43,7 +41,6 @@ public class FriendshipService {
         return new FriendshipDTO(friendship.getId(), inviterUser, inviteeUser, dummyUser, friendship.getStatus());
     }
 
-    // Service to add test data to the database
     public FriendshipModel addTestData(FriendshipModel friendship) {
         return friendshipRepository.save(friendship);
     }
@@ -73,7 +70,7 @@ public class FriendshipService {
          return friendshipDTOS;
     }
 
-    public List<FriendshipDTO> getAllFriendsRequests() {
+    public List<FriendshipDTO> sentRequests() {
 
         List<FriendshipModel> friendships= friendshipRepository.findByInviterUserIdAndStatus(getUserServices.getUserId(), "invited");
 
@@ -88,7 +85,7 @@ public class FriendshipService {
         return friendshipDTOS;
     }
 
-    public List<FriendshipDTO> getAllFriendsInvitations() {
+    public List<FriendshipDTO> receivedRequests() {
 
         List<FriendshipModel> friendships= friendshipRepository.findByInviteeUserIdAndStatus(getUserServices.getUserId(), "invited");
 
@@ -106,8 +103,6 @@ public class FriendshipService {
     public User getUserByUsername(String input) {
         return userRepository.findByUsername(input);
     }
-
-
 
     public FriendshipModel acceptFriendInvitation(String friendshipId){
         FriendshipModel friendship  = friendshipRepository.findByIdAndInviteeUserIdAndStatus(friendshipId, getUserServices.getUserId(), "invited");
@@ -137,7 +132,6 @@ public class FriendshipService {
             throw new RuntimeException("Friendship not found with ID: " + friendshipId + " or it is not accepted.");
         }
     }
-
 
     public FriendshipModel sendInvite(String name, String email){
 

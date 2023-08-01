@@ -33,23 +33,20 @@ public class FriendshipController {
      }
 
      @GetMapping("/")
-     public ResponseEntity<List<FriendshipDTO>> getAllFriendsByUserId(@RequestParam("userId") String userId){
-          getUserServices.setUserId(userId);
+     public ResponseEntity<List<FriendshipDTO>> getAllFriendsByUserId(){
           List<FriendshipDTO> friends = friendshipService.getAllFriendsByUserId();
           return ResponseEntity.ok(friends);
      }
 
      @GetMapping("/sent-requests")
-     public ResponseEntity<List<FriendshipDTO>> getAllFriendsRequests(@RequestParam("userId") String userId){
-          getUserServices.setUserId(userId);
-          List<FriendshipDTO> friends = friendshipService.getAllFriendsRequests();
+     public ResponseEntity<List<FriendshipDTO>> getAllFriendsRequests(){
+          List<FriendshipDTO> friends = friendshipService.sentRequests();
           return ResponseEntity.ok(friends);
      }
 
      @GetMapping("/received-requests")
-     public ResponseEntity<List<FriendshipDTO>> getAllFriendsInvitations(@RequestParam("userId") String userId){
-          getUserServices.setUserId(userId);
-          List<FriendshipDTO> friends = friendshipService.getAllFriendsInvitations();
+     public ResponseEntity<List<FriendshipDTO>> getAllFriendsInvitations(){
+          List<FriendshipDTO> friends = friendshipService.receivedRequests();
           return ResponseEntity.ok(friends);
      }
 
@@ -60,29 +57,25 @@ public class FriendshipController {
      }
 
      @PostMapping("/{friendship_id}/accept")
-     public ResponseEntity<FriendshipModel> acceptFriendInvitation(@PathVariable("friendship_id") String friendship_id , @RequestParam("userId") String userId){
-          getUserServices.setUserId(userId);
+     public ResponseEntity<FriendshipModel> acceptFriendInvitation(@PathVariable("friendship_id") String friendship_id){
           FriendshipModel friendship = friendshipService.acceptFriendInvitation( friendship_id);
           return ResponseEntity.ok(friendship);
      }
 
      @PostMapping("/{friendship_id}/cancel")
-     public ResponseEntity<Void> cancelFriendInvitation(@PathVariable("friendship_id") String friendship_id , @RequestParam("userId") String userId){
-          getUserServices.setUserId(userId);
+     public ResponseEntity<Void> cancelFriendInvitation(@PathVariable("friendship_id") String friendship_id ){
           friendshipService.cancelInvitation(friendship_id);
           return null;
      }
 
      @PostMapping("/{friendship_id}/revoke")
-     public ResponseEntity<String> revokeInvitation(@PathVariable("friendship_id") String friendship_id, @RequestParam("userId") String userId ){
-          getUserServices.setUserId(userId);
+     public ResponseEntity<String> revokeInvitation(@PathVariable("friendship_id") String friendship_id ){
           friendshipService.revokeFriendship(friendship_id);
           return ResponseEntity.status(HttpStatus.OK).body("Friendship Revoked by User Successfully!");
      }
 
      @PostMapping("/invite")
-     public ResponseEntity<String> sendInvite(@RequestBody Map<String, String> inviteRequest, @RequestParam("userId") String userId){
-          getUserServices.setUserId(userId);
+     public ResponseEntity<String> sendInvite(@RequestBody Map<String, String> inviteRequest){
           String name = inviteRequest.get("name");
           String email = inviteRequest.get("email");
 
