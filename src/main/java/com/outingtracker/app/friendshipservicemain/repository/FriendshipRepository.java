@@ -5,6 +5,7 @@ import org.springframework.data.mongodb.repository.MongoRepository;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface FriendshipRepository extends MongoRepository<FriendshipModel, String> {
@@ -32,6 +33,8 @@ public interface FriendshipRepository extends MongoRepository<FriendshipModel, S
 
     FriendshipModel findByIdAndStatus(String friendshipId, String status);
 
+
     FriendshipModel findByInviteeUserIdAndInviterUserIdOrInviteeUserIdAndInviterUserId(String userId1, String UserId2, String UserId5, String UserID4);
 
+     FriendshipModel findByIdAndStatusOrStatusIsNull(String fid, String status);
 }

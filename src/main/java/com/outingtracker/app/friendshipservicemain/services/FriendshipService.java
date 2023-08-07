@@ -13,6 +13,8 @@ import com.outingtracker.app.friendshipservicemain.dto.FriendshipDTO;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.NoSuchElementException;
+import java.util.Optional;
 
 @Service
 public class FriendshipService {
@@ -30,6 +32,7 @@ public class FriendshipService {
     }
 
     private FriendshipDTO convertToDTO(FriendshipModel friendship) {
+        System.out.println("gey" + friendship.getInviterUserId());
         User inviterUser = userRepository.findById(friendship.getInviterUserId()).orElse(null);
         User inviteeUser = friendship.getInviteeUserId() != null ? userRepository.findById(friendship.getInviteeUserId()).orElse(null) : null;
         DummyUser dummyUser = friendship.getDummyUserId() != null ? dummyUserRepository.findById(friendship.getDummyUserId()).orElse(null) : null;
@@ -86,10 +89,12 @@ public class FriendshipService {
     }
 
     public List<FriendshipDTO> receivedRequests() {
-
+       System.out.println(getUserServices.getUserId());
         List<FriendshipModel> friendships= friendshipRepository.findByInviteeUserIdAndStatus(getUserServices.getUserId(), "invited");
+        System.out.println(getUserServices.getUserId());
 
         List<FriendshipDTO> friendshipDTOS = new ArrayList<>();
+        System.out.println(getUserServices.getUserId());
 
         for(FriendshipModel friendship : friendships){
 
@@ -123,18 +128,23 @@ public class FriendshipService {
     }
 
     public void revokeFriendship(String friendshipId) {
-        FriendshipModel friendship = friendshipRepository.findByIdAndStatus(friendshipId, "accepted");
+        Optional<FriendshipModel> friendshipOptional = friendshipRepository.findById(friendshipId);
 
-        if (friendship != null && (getUserServices.getUserId().equals(friendship.getInviteeUserId())
-                || getUserServices.getUserId().equals(friendship.getInviterUserId()))) {
-            friendshipRepository.delete(friendship);
+        if (friendshipOptional.isPresent()) {
+            FriendshipModel friendship = friendshipOptional.get(); // Get the FriendshipModel from Optional
+            if (getUserServices.getUserId().equals(friendship.getInviteeUserId())
+                    || getUserServices.getUserId().equals(friendship.getInviterUserId())) {
+                friendshipRepository.delete(friendship);
+            } else {
+                throw new RuntimeException("You are not authorized to revoke this friendship.");
+            }
         } else {
-            throw new RuntimeException("Friendship not found with ID: " + friendshipId + " or it is not accepted.");
+            throw new NoSuchElementException("Friendship not found with ID: " + friendshipId);
         }
     }
 
-    public FriendshipModel sendInvite(String name, String email){
-
+    public FriendshipDTO sendInvite(String name, String email){
+       String check = "64c7545383109e59664065e1";
         User user = null;
 
         // checking if nameOrEmail is Email
@@ -145,27 +155,56 @@ public class FriendshipService {
         if(user != null){
 
             FriendshipModel existingFriendship = friendshipRepository.findByInviteeUserIdAndInviterUserIdOrInviteeUserIdAndInviterUserId(
-                    getUserServices.getUserId(), user.getId(), user.getId(), getUserServices.getUserId()
+                    check, user.getId(), user.getId(), check
             );
 
             if (existingFriendship != null) {
+                System.out.println("Friendship Not Found");
                 return null;
             }
 
             // User with given email is registered, send invite
-            FriendshipModel friendshipModel = new FriendshipModel(getUserServices.getUserId(),user.getId(),"invited");
-            return friendshipRepository.save(friendshipModel);
+            FriendshipModel friendshipModel = new FriendshipModel(check,user.getId(),"invited");
+            friendshipRepository.save(friendshipModel);
+            FriendshipDTO result = convertToDTO(friendshipModel);
+
+             return result;
         }else{
 
-            String var = name == null?email:name;
+            String var = name.equals("")?email:name;
             DummyUser dummyUser = new DummyUser(var);
             dummyUserRepository.save(dummyUser);
 
-            FriendshipModel friendshipModel = new FriendshipModel(getUserServices.getUserId(),dummyUser.getId());
-            return friendshipRepository.save(friendshipModel);
+            FriendshipModel friendshipModel = new FriendshipModel(check,dummyUser.getId());
+            friendshipRepository.save(friendshipModel);
+            FriendshipDTO result = convertToDTO(friendshipModel);
+
+            return result;
         }
 
     }
+
+
+    public FriendshipDTO getFriendshipById(String friendship_id) {
+        String currentUserId = getUserServices.getUserId();
+
+        Optional<FriendshipModel> friendshipOptional = friendshipRepository.findById(friendship_id);
+
+        if (friendshipOptional.isPresent()) {
+            FriendshipModel friendship = friendshipOptional.get();
+
+            // Check if the current user is a part of this friendship
+            if (currentUserId.equals(friendship.getInviterUserId()) || currentUserId.equals(friendship.getInviteeUserId())) {
+                FriendshipDTO friendshipDTO = convertToDTO(friendship);
+                return friendshipDTO;
+            } else {
+                throw new RuntimeException("You are not authorized to access this friendship.");
+            }
+        } else {
+            throw new NoSuchElementException("Friendship not found with ID: " + friendship_id);
+        }
+    }
+
 
 
 }

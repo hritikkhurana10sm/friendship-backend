@@ -5,7 +5,6 @@ import com.outingtracker.app.friendshipservicemain.model.FriendshipModel;
 import com.outingtracker.app.friendshipservicemain.model.User;
 import com.outingtracker.app.friendshipservicemain.services.FriendshipService;
 import com.outingtracker.app.friendshipservicemain.services.GetUserServices;
-import org.apache.catalina.connector.Response;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -69,31 +68,43 @@ public class FriendshipController {
      }
 
      @PostMapping("/{friendship_id}/revoke")
-     public ResponseEntity<String> revokeInvitation(@PathVariable("friendship_id") String friendship_id ){
+     public ResponseEntity<Void> revokeInvitation(@PathVariable("friendship_id") String friendship_id ){
           friendshipService.revokeFriendship(friendship_id);
-          return ResponseEntity.status(HttpStatus.OK).body("Friendship Revoked by User Successfully!");
+          return null;
+//          ResponseEntity.status(HttpStatus.OK).body("Friendship Revoked by User Successfully!")
      }
 
      @PostMapping("/invite")
-     public ResponseEntity<String> sendInvite(@RequestBody Map<String, String> inviteRequest){
+     public ResponseEntity<FriendshipDTO> sendInvite(@RequestBody Map<String, String> inviteRequest) {
           String name = inviteRequest.get("name");
           String email = inviteRequest.get("email");
+            System.out.println("heyyy" + name);
+          System.out.println("heyyy" + email);
+          if (StringUtils.hasText(name) || StringUtils.hasText(email)) {
 
-          if(StringUtils.hasText(name) || StringUtils.hasText(email)){
+               FriendshipDTO result = friendshipService.sendInvite(name, email);
+               if (result != null) {
 
-               FriendshipModel result = friendshipService.sendInvite(name, email);
-
-               if(result != null) {
-                    return ResponseEntity.status(HttpStatus.OK).body("Friend Request sent successfully");
-               }else{
-                    return ResponseEntity.status(HttpStatus.CONFLICT).body("Already friends / Already Send-Requests or Received");
+               return ResponseEntity.ok(result);
+               }
+               else{
+                   return ResponseEntity.status(HttpStatus.CONFLICT).body(null);
                }
           } else {
                // Both name and email are empty
-               return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Provide atleast one of email or name");
+               return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
+         }
+
           }
 
+
+     @GetMapping("/{friendship_id}/friend")
+     public ResponseEntity<FriendshipDTO> getFriendshipById(@PathVariable("friendship_id") String friendship_id){
+          FriendshipDTO friend = friendshipService.getFriendshipById(friendship_id);
+          return ResponseEntity.ok(friend);
      }
+
+
 
 
 }

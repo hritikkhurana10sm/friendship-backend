@@ -3,6 +3,7 @@ package com.outingtracker.app.friendshipservicemain.services;
 import jakarta.annotation.PostConstruct;
 import org.springframework.context.annotation.Bean;
 import org.springframework.stereotype.Service;
+import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.context.annotation.RequestScope;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
@@ -31,5 +32,9 @@ public class GetUserServices {
 
     public String getUserId() {
         return userId;
+    }
+
+    public void setUserId(String userId){
+        this.userId = userId;
     }
 }
