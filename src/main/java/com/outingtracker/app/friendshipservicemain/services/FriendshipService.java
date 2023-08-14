@@ -1,5 +1,6 @@
 package com.outingtracker.app.friendshipservicemain.services;
 
+//import com.outingtracker.app.friendshipservicemain.client.AuthServiceClient;
 import com.outingtracker.app.friendshipservicemain.model.DummyUser;
 import com.outingtracker.app.friendshipservicemain.model.FriendshipModel;
 import com.outingtracker.app.friendshipservicemain.model.User;
@@ -7,7 +8,6 @@ import com.outingtracker.app.friendshipservicemain.repository.DummyUserRepositor
 import com.outingtracker.app.friendshipservicemain.repository.FriendshipRepository;
 import com.outingtracker.app.friendshipservicemain.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.Bean;
 import org.springframework.stereotype.Service;
 import com.outingtracker.app.friendshipservicemain.dto.FriendshipDTO;
 
@@ -23,16 +23,19 @@ public class FriendshipService {
     private final DummyUserRepository dummyUserRepository;
     private final GetUserServices getUserServices;
 
+//   private final AuthServiceClient authServiceClient;
+
+//     private final AuthServiceClient authServiceClient;
     @Autowired
     public FriendshipService(FriendshipRepository friendshipRepository, UserRepository userRepository, DummyUserRepository dummyUserRepository, GetUserServices getUserServices) {
         this.friendshipRepository = friendshipRepository;
         this.userRepository = userRepository;
         this.dummyUserRepository = dummyUserRepository;
         this.getUserServices = getUserServices;
+
     }
 
     private FriendshipDTO convertToDTO(FriendshipModel friendship) {
-        System.out.println("gey" + friendship.getInviterUserId());
         User inviterUser = userRepository.findById(friendship.getInviterUserId()).orElse(null);
         User inviteeUser = friendship.getInviteeUserId() != null ? userRepository.findById(friendship.getInviteeUserId()).orElse(null) : null;
         DummyUser dummyUser = friendship.getDummyUserId() != null ? dummyUserRepository.findById(friendship.getDummyUserId()).orElse(null) : null;
@@ -51,7 +54,7 @@ public class FriendshipService {
     public List<FriendshipDTO> getAllFriendsByUserId() {
 
         String userId = getUserServices.getUserId();
-
+        System.out.println("inside friendlist " + userId);
         if (userId == null) {
             throw new IllegalArgumentException("User ID must not be null.");
         }
@@ -144,7 +147,9 @@ public class FriendshipService {
     }
 
     public FriendshipDTO sendInvite(String name, String email){
-       String check = "64c7545383109e59664065e1";
+//        String ram = authServiceClient.getUserName("rammi");
+        String currentUserID = getUserServices.getUserId();
+//        System.out.println(check);
         User user = null;
 
         // checking if nameOrEmail is Email
@@ -155,7 +160,7 @@ public class FriendshipService {
         if(user != null){
 
             FriendshipModel existingFriendship = friendshipRepository.findByInviteeUserIdAndInviterUserIdOrInviteeUserIdAndInviterUserId(
-                    check, user.getId(), user.getId(), check
+                    currentUserID, user.getId(), user.getId(), currentUserID
             );
 
             if (existingFriendship != null) {
@@ -164,7 +169,7 @@ public class FriendshipService {
             }
 
             // User with given email is registered, send invite
-            FriendshipModel friendshipModel = new FriendshipModel(check,user.getId(),"invited");
+            FriendshipModel friendshipModel = new FriendshipModel(currentUserID,user.getId(),"invited");
             friendshipRepository.save(friendshipModel);
             FriendshipDTO result = convertToDTO(friendshipModel);
 
@@ -175,7 +180,7 @@ public class FriendshipService {
             DummyUser dummyUser = new DummyUser(var);
             dummyUserRepository.save(dummyUser);
 
-            FriendshipModel friendshipModel = new FriendshipModel(check,dummyUser.getId());
+            FriendshipModel friendshipModel = new FriendshipModel(currentUserID,dummyUser.getId());
             friendshipRepository.save(friendshipModel);
             FriendshipDTO result = convertToDTO(friendshipModel);
 
@@ -192,7 +197,7 @@ public class FriendshipService {
 
         if (friendshipOptional.isPresent()) {
             FriendshipModel friendship = friendshipOptional.get();
-
+            System.out.println("++++" + currentUserId);
             // Check if the current user is a part of this friendship
             if (currentUserId.equals(friendship.getInviterUserId()) || currentUserId.equals(friendship.getInviteeUserId())) {
                 FriendshipDTO friendshipDTO = convertToDTO(friendship);

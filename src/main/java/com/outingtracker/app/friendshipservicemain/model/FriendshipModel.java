@@ -16,6 +16,12 @@ public class FriendshipModel {
     private String dummyUserId = null;
     private String status = null;
 
+    private String inviteeName = null;
+
+    private String inviterName = null;
+
+    private String dummyUserName = null;
+
     public FriendshipModel(){
 
     }

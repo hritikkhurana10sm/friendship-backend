@@ -1,7 +1,17 @@
+server:
+  port: 8090
+
 spring:
   data:
     mongodb:
       host:localhost
       port:27017
       database:friendsDB
-      
+
+feign:
+  client:
+    config:
+      default:
+        ribbon:
+          client:
+            name=auth-service:

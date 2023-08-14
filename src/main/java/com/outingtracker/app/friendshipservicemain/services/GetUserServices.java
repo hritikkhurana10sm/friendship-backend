@@ -1,6 +1,9 @@
 package com.outingtracker.app.friendshipservicemain.services;
 
 import jakarta.annotation.PostConstruct;
+import org.example.model.UserModel;
+import org.example.util.PrincipalDetails;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.stereotype.Service;
 import org.springframework.web.bind.annotation.CrossOrigin;
@@ -8,28 +11,23 @@ import org.springframework.web.context.annotation.RequestScope;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
 import org.springframework.web.servlet.mvc.condition.RequestConditionHolder;
+
 @Service
 @RequestScope
 public class GetUserServices {
     private String userId;
 
+     @Autowired
+     private PrincipalDetails principalDetails;
+
+
     @PostConstruct
     public void init() {
-        String queryString = ((ServletRequestAttributes) RequestContextHolder.currentRequestAttributes()).getRequest().getQueryString();
-
-        if (queryString != null) {
-            String[] queryParams = queryString.split("&");
-            for (String param : queryParams) {
-                String[] keyValue = param.split("=");
-                if (keyValue.length == 2 && "userId".equals(keyValue[0])) {
-                    this.userId = keyValue[1];
-                    break;
-                }
-            }
-        }
-        System.out.println("userId " + userId);
+        System.out.println("Radha->"  + principalDetails.getPrincipalDetails().getId());
+//      this.userId=  this.principalDetails.getPrincipalDetails().getId();
+//        System.out.println("User Id from auth " + this.userId);
+        this.userId = "64c7545383109e59664065e1";
     }
-
     public String getUserId() {
         return userId;
     }

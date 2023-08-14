@@ -78,8 +78,7 @@ public class FriendshipController {
      public ResponseEntity<FriendshipDTO> sendInvite(@RequestBody Map<String, String> inviteRequest) {
           String name = inviteRequest.get("name");
           String email = inviteRequest.get("email");
-            System.out.println("heyyy" + name);
-          System.out.println("heyyy" + email);
+
           if (StringUtils.hasText(name) || StringUtils.hasText(email)) {
 
                FriendshipDTO result = friendshipService.sendInvite(name, email);
